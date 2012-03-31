@@ -17,6 +17,7 @@ import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -159,10 +160,22 @@ public class FriendsListActivity extends Activity {
 		else if(id == NOTICE_ID)
 		{
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+			builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					// do nothing, just cancel
+					
+				}
+				
+				
+			});
 			LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-			View layout = inflater.inflate(R.layout.bump, null);
+			View layout = inflater.inflate(R.layout.notice, null);
+			builder.setView(layout);
+			AlertDialog dialog = builder.create();
 			
-			
+			return dialog;
 		}
 		
 		
@@ -190,6 +203,7 @@ public class FriendsListActivity extends Activity {
 			Toast.makeText(this, "Failed to load friends, try again", Toast.LENGTH_LONG).show();
 		} else {
 			populateFriendsListView(friendsList);
+			showDialog(NOTICE_ID);
 		}
 
 	}
@@ -199,7 +213,9 @@ public class FriendsListActivity extends Activity {
         unbindService(connection);
         unregisterReceiver(receiver);
         
+        removeDialog(LOADING_FRIENDS_ID);
         
+        removeDialog(NOTICE_ID);
         
         super.onDestroy();
      }

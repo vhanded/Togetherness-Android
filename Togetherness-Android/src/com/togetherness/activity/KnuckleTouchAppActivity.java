@@ -24,7 +24,7 @@ public class KnuckleTouchAppActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.bump);
+		//setContentView(R.layout.bump);
 
 		bindService(new Intent(IBumpAPI.class.getName()), connection, Context.BIND_AUTO_CREATE);
 
