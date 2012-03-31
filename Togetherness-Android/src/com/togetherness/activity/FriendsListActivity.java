@@ -75,10 +75,18 @@ public class FriendsListActivity extends Activity {
 				if (action.equals(BumpAPIIntents.DATA_RECEIVED)) {
 					Log.i("Bump Test", "Received data from: " + api.userIDForChannelID(intent.getLongExtra("channelID", 0)));
 					Log.i("Bump Test", "Data: " + new String(intent.getByteArrayExtra("data")));
+					
+					String facebookid = new String(intent.getByteArrayExtra("data"));
+					
+					Intent bumpIntent = new Intent(FriendsListActivity.this, StatusUpdateActivity.class);
+					bumpIntent.putExtra("facebook_id", facebookid);
+					startActivity(bumpIntent);
+					
+					
 				} else if (action.equals(BumpAPIIntents.MATCHED)) {
 					long channelID = intent.getLongExtra("proposedChannelID", 0);
 					Log.i("Bump Test", "Matched with: " + api.userIDForChannelID(channelID));
-					Toast.makeText(FriendsListActivity.this, "Matched with: " + api.userIDForChannelID(channelID), Toast.LENGTH_LONG).show();
+					//Toast.makeText(FriendsListActivity.this, "Matched with: " + api.userIDForChannelID(channelID), Toast.LENGTH_LONG).show();
 					api.confirm(channelID, true);
 					Log.i("Bump Test", "Confirm sent");
 				} else if (action.equals(BumpAPIIntents.CHANNEL_CONFIRMED)) {

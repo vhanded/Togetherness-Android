@@ -34,7 +34,7 @@ public class FriendsListAdapter extends ArrayAdapter<FacebookProfile> {
 	@Override
 	public View getView(int position, View view, ViewGroup parent) {
 		
-		FacebookProfile friend = getItem(position);
+		final FacebookProfile friend = getItem(position);
 		
 		if (view == null) {
 			view = mInflater.inflate(R.layout.friendslist_row, null);
@@ -45,7 +45,8 @@ public class FriendsListAdapter extends ArrayAdapter<FacebookProfile> {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(getContext(), StatusUpdateActivity.class);
-				
+				intent.putExtra("facebookid", friend.getId());
+				getContext().startActivity(intent);
 			}
 		});
 		
