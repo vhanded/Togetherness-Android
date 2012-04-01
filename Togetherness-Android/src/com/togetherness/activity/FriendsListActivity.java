@@ -23,6 +23,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -127,8 +128,6 @@ public class FriendsListActivity extends Activity {
 		filter.addAction(BumpAPIIntents.CONNECTED);
 		registerReceiver(receiver, filter);
 
-		// testImage = (ImageView)findViewById(R.id.friendslist_test_imageview);
-
 		initializeLayoutObject();
 
 		reloadFacebookFriends();
@@ -138,6 +137,7 @@ public class FriendsListActivity extends Activity {
 	private void initializeLayoutObject() {
 
 		mFriendsListView = (ListView) findViewById(R.id.friendslist_listview);
+		mFriendsListView.setCacheColorHint(Color.TRANSPARENT);
 
 	}
 
@@ -154,13 +154,13 @@ public class FriendsListActivity extends Activity {
 			final ProgressDialog dialog = new ProgressDialog(this);
 			dialog.setMessage("Loading Friends..");
 			dialog.setIndeterminate(true);
-			dialog.setCancelable(false);
+			dialog.setCancelable(true);
 			return dialog;
 		}
 		else if(id == NOTICE_ID)
 		{
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-			builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+			builder.setNegativeButton("ok", new DialogInterface.OnClickListener() {
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {

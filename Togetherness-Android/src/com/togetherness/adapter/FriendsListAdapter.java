@@ -45,7 +45,7 @@ public class FriendsListAdapter extends ArrayAdapter<FacebookProfile> {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(getContext(), StatusUpdateActivity.class);
-				intent.putExtra("facebookid", friend.getId());
+				intent.putExtra("facebook_id", friend.getId());
 				getContext().startActivity(intent);
 			}
 		});

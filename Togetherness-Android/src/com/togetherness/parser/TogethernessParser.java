@@ -18,9 +18,10 @@ public class TogethernessParser {
 			
 			String id = profile.getString("id");
 			String name = profile.getString("name");
-			Boolean isMale =(profile.getString("gender").equals("male") ? true : false);
+			//Boolean isMale = (profile.getString("gender").equals("male") ? true : false);
 			
-			return new FacebookProfile(id, name, isMale);
+			
+			return new FacebookProfile(id, name, false);
 			
 			
 		} catch (JSONException e) {

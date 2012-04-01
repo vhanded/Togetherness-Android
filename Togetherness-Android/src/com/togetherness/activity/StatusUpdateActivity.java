@@ -6,20 +6,20 @@ import java.util.List;
 import java.util.Date;
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 import com.j256.ormlite.android.apptools.OpenHelperManager;
 import com.togetherness.R;
+import com.togetherness.communication.TogethernessServerCommUtil;
 import com.togetherness.dm.TogethernessORMLiteHelper;
 import com.togetherness.entity.Friends;
 import com.togetherness.entity.UserTogetherMap;
-import com.togetherness.util.TogethernessConstants;
-
+import com.togetherness.lazylist.ImageLoader;
 import java.util.ArrayList;
 
 
@@ -46,13 +46,17 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
          setContentView(R.layout.status_update);
 
          if(getIntent().getExtras() != null){
-             Parcelable[] selectedFriendsArr =
-                     getIntent().getExtras().getParcelableArray(TogethernessConstants.SELECTED_FRIEND_LIST);
+             String friendFBID =
+                     getIntent().getExtras().getString("facebook_id");
 
-             if(selectedFriendsArr != null && selectedFriendsArr.length > 0){
-                 populateFriendPhotoFromORMLite(selectedFriendsArr);
-                 this.selectedFriends = getFriendsFromParcalable(selectedFriendsArr);
+             if(friendFBID != null){
+                 populateFriendPhoto(friendFBID);
+
+                 this.selectedFriends = getFriends(friendFBID);
              }
+         } else{
+             storeSampleBitmap();
+            // populateFriendPhotoFromORMLite();
          }
 
          isTogether = isAlreadyTogether(selectedFriends);
@@ -63,10 +67,10 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
          if(isTogether){
             button.setText("Apart");
          }
-         button.setOnClickListener(this);
+         //button.setOnClickListener(this);
 
-         Gallery g = (Gallery) findViewById(R.id.gallery);
-         g.setAdapter(new ImageAdapter(this));
+        /* Gallery g = (Gallery) findViewById(R.id.gallery);
+         g.setAdapter(new ImageAdapter(this));*/
 
      }
 
@@ -82,7 +86,7 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
         if(!isTogether){
              updateTogetherStatus();
         }else{
-
+             updateApartStatus();
         }
 
     }
@@ -105,22 +109,44 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
             userTogetherMap.setFbUserId(friend.getLoggedInUserId());
             userTogetherMap.setTogetherUserId(friend.getFriendsFBID());
             userTogetherMap.setTogetherMessage((msg != null) ? msg : "");
-            userTogetherMap.setTogetherStatus(friend.getCheckedInStatus());
+            userTogetherMap.setTogetherStatus("I");
             userTogetherMap.setTogetherTimestamp(date);
 
             userTogetherMapList.add(userTogetherMap);
         }
+
+        TogethernessORMLiteHelper togethernessORMLiteHelper =
+                OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
+
+        togethernessORMLiteHelper.storeUserTogetherMap(userTogetherMapList);
+
+        SharedPreferences setting = getSharedPreferences("TogethernessSetting", 0);
+        long fbUserToken = setting.getLong("fbAccessToken", 0);
+
+        TogethernessServerCommUtil  serverComUtil = new TogethernessServerCommUtil(fbUserToken, userTogetherMapList);
+        serverComUtil.execute();
+
+        OpenHelperManager.releaseHelper();
+
     }
 
+    /**
+     * Post Apart msg to Server & also store it in local DB.
+     */
     private void updateApartStatus(){
         TogethernessORMLiteHelper togethernessORMLiteHelper =
                 OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
 
-        togethernessORMLiteHelper.updateAndComputeApartStatus(selectedFriends);
+        List<UserTogetherMap> updatedUserTogethernessList = togethernessORMLiteHelper.updateAndComputeApartStatus(selectedFriends);
+
+        SharedPreferences setting = getSharedPreferences("TogethernessSetting", 0);
+        long fbUserToken = setting.getLong("fbAccessToken", 0);
+
+        TogethernessServerCommUtil  serverComUtil = new TogethernessServerCommUtil(fbUserToken, updatedUserTogethernessList);
+        serverComUtil.execute();
 
         OpenHelperManager.releaseHelper();
 
-        //http://localhost:8080/api/together/oAuthToken||UserId||Friend1!!Friend2||yyMMddhhmmss||CheckInStatus(I/O)||Message
     }
 
     public View makeView() {
@@ -133,39 +159,9 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
         return i;
     }
 
-    public class ImageAdapter extends BaseAdapter {
-        public ImageAdapter(Context c) {
-            mContext = c;
-        }
 
-        public int getCount() {
-            return friendPhotoBitmap.length;
-        }
-
-        public Object getItem(int position) {
-            return position;
-        }
-
-        public long getItemId(int position) {
-            return position;
-        }
-
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ImageView i = new ImageView(mContext);
-
-            i.setImageBitmap(friendPhotoBitmap[position]);
-            i.setAdjustViewBounds(true);
-            i.setLayoutParams(new Gallery.LayoutParams(
-                    Gallery.LayoutParams.WRAP_CONTENT, Gallery.LayoutParams.WRAP_CONTENT));
-            return i;
-        }
-
-        private Context mContext;
-
-    }
-
-    private void populateFriendPhotoFromORMLite(Parcelable[] friendsArray){
-        TogethernessORMLiteHelper togethernessORMLiteHelper =
+    private void populateFriendPhoto(String fbUserID){
+        /*TogethernessORMLiteHelper togethernessORMLiteHelper =
                 OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
 
         friendPhotoBitmap = new Bitmap[friendsArray.length];
@@ -177,7 +173,10 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
             if(friendPhoto != null){
                 friendPhotoBitmap[i] = parseByteArrayToBitmap(((Friends)friendPhoto.get(0)).getFriendPhoto());
             }
-        }
+        }*/
+        ImageLoader imgLoader = new ImageLoader(this.getApplicationContext(), 200, true);
+        ImageView imgView = (ImageView)findViewById(R.id.imgView);
+        imgLoader.DisplayImage("https://graph.facebook.com/"+fbUserID+"/picture?type=large", imgView);
 
         OpenHelperManager.releaseHelper();
     }
@@ -192,20 +191,20 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
 
         boolean isTogether = false;
 
-        TogethernessORMLiteHelper togethernessORMLiteHelper =
-                OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
-
-        for(Friends friend: friendsList){
-            List<UserTogetherMap> userTogetherMap = togethernessORMLiteHelper.fetchUserTogetherMapByID(friend.getFriendsFBID());
-            if(userTogetherMap != null){
-                String togetherStatus = ((UserTogetherMap)userTogetherMap.get(0)).getTogetherStatus();
-                
-                if(togetherStatus != null && togetherStatus.trim().equalsIgnoreCase("Y")){
-                    isTogether = true;
-                    break;
-                }
-            }
-        }
+//        TogethernessORMLiteHelper togethernessORMLiteHelper =
+//                OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
+//
+//        for(Friends friend: friendsList){
+//            List<UserTogetherMap> userTogetherMap = togethernessORMLiteHelper.fetchUserTogetherMapByID(friend.getFriendsFBID());
+//            if(userTogetherMap != null && userTogetherMap.size() > 0){
+//                String togetherStatus = ((UserTogetherMap)userTogetherMap.get(0)).getTogetherStatus();
+//                
+//                if(togetherStatus != null && togetherStatus.trim().equalsIgnoreCase("I")){
+//                    isTogether = true;
+//                    break;
+//                }
+//            }
+//        }
 
         return isTogether;
     }
@@ -222,6 +221,8 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
         List<Friends> list = new ArrayList<Friends>();
         list.add(friends);
 
+        selectedFriends = list;
+
         TogethernessORMLiteHelper togethernessORMLiteHelper =
                 OpenHelperManager.getHelper(this, TogethernessORMLiteHelper.class);
 
@@ -233,12 +234,13 @@ public class StatusUpdateActivity extends Activity implements ViewSwitcher.ViewF
         return BitmapFactory.decodeByteArray(friendPhotoArray, 0, friendPhotoArray.length);
     }
     
-    private List<Friends> getFriendsFromParcalable(Parcelable[] parcelables){
+    private List<Friends> getFriends(String fbUserID){
         List<Friends> friendsList = new ArrayList<Friends>();
 
-        for(Parcelable parcelable: parcelables){
-            friendsList.add((Friends)parcelable);
-        }
+        Friends friend = new Friends();
+        friend.setLoggedInUserId(fbUserID);
+
+        friendsList.add(friend);
 
         return friendsList;
     }

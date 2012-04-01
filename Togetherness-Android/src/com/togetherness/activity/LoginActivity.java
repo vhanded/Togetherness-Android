@@ -11,6 +11,8 @@ import com.togetherness.util.FacebookUtilities;
 
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -54,6 +56,21 @@ public class LoginActivity extends Activity {
 			startActivityForResult(toLandingActivity, CALL_TO_LANDING);
 		}
 	}
+	
+	
+
+	@Override
+	protected Dialog onCreateDialog(int id) {
+		
+		final ProgressDialog dialog = new ProgressDialog(this);
+		dialog.setMessage("Fetching your info..");
+		dialog.setIndeterminate(true);
+		dialog.setCancelable(false);
+		return dialog;
+		
+	}
+
+
 
 	private void initializeListener() {
 		
@@ -87,7 +104,7 @@ public class LoginActivity extends Activity {
 						
 						FacebookUtilities.attemptGetFacebookProfile( mhandler, LoginActivity.this);
 						
-						
+						showDialog(0);
 
 					}
 
@@ -146,6 +163,8 @@ public class LoginActivity extends Activity {
 	}
 
 	public void finishGetFacebookProfile(FacebookProfile profile) {
+		
+		removeDialog(0);
 		
 		if(profile == null)
 		{
